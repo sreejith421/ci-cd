@@ -1,0 +1,14 @@
+apiVersion: notification.toolkit.fluxcd.io/v1beta1
+kind: Alert
+metadata:
+  name: dev--deployments-alerts
+  namespace: flux-system
+spec:
+  providerRef:
+    name: msteams ##if its slack please chnage accordingly 
+  eventSeverity: info
+  eventSources:
+    - kind: GitRepository
+      name: '*'
+    - kind: Kustomization
+      name: '*'
