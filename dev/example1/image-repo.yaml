@@ -7,5 +7,5 @@ metadata:
 spec:
   secretRef:
     name: ecr-credentials
-  image: account-id.dkr.ecr.us-east-1.amazonaws.com/repo-name
+  image: account-id.dkr.ecr.us-east-1.amazonaws.com/example1-repo
   interval: 1m0s
