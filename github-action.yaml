@@ -1,0 +1,62 @@
+name: Building and pushing a docker image to Amazon ECR
+on:
+  push:
+    paths:
+    - src/** ##change path accordingly 
+    branches:         
+    - develop ##change branch name accodringly 
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_DEFAULT_OUTPUT: json
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}  
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  CONTAINER_IMAGE: ${{ github.run_number }}
+
+jobs:
+  build-and-push:
+    name: Building and pushing image to AWS ECR
+    runs-on: ubuntu-latest
+    steps:
+    - name: Send message to ms teams Triggering deployment
+      uses: dhollerbach/github-action-send-message-to-ms-teams@1.0.10
+      with:
+        webhook: 'paste your webhook'
+   
+        message: 'SonarQube Code Quality scan Started '
+
+
+    - uses: actions/checkout@master
+    - name: SonarQube Scan
+      uses: kitabisa/sonarqube-action@master
+      with:
+        host: ${{ secrets.SONARQUBE_HOST }}
+        login: ${{ secrets.SONARQUBE_TOKEN }}
+
+
+    - name: Send message to ms teams Triggering deployment
+      uses: dhollerbach/github-action-send-message-to-ms-teams@1.0.10
+      with:
+        webhook: 'paste your webhook msteam or slack'
+        message: 'Latest Code Deployment Started Please wait'
+
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Setup ECR
+      run: |
+        echo $( aws ecr get-authorization-token --region us-east-1 --output text --query 'authorizationData[].authorizationToken' | base64 -d | cut -d: -f2) | docker login -u AWS https://accountid.dkr.ecr.us-east-1.amazonaws.com --password-stdin
+    - name: Build and tag the image
+      run: |
+        docker build \
+          -t $CONTAINER_IMAGE \
+          -t account-id.dkr.ecr.us-east-1.amazonaws.com/repository-name:$CONTAINER_IMAGE ./src
+    - name: Push
+      if: github.ref == 'refs/heads/develop'
+      run: |
+              docker push account-id.dkr.ecr.us-east-1.amazonaws.com/repository-name:$CONTAINER_IMAGE
+    - name: Send message to ms teams
+      uses: dhollerbach/github-action-send-message-to-ms-teams@1.0.10
+      with:
+        webhook: 'paste your webhook slack or ms-team'
+        message: 'Latest Code Deployment  in Dev Done'
